@@ -107,11 +107,11 @@ When adding domain in DokPloy:
 
 ```bash
 # Check container status
-ssh trent@arise-server "docker ps | grep myapp"
+ssh user@arise-server "docker ps | grep myapp"
 
 # View logs
-ssh trent@arise-server "docker logs -f <container-name>"
+ssh user@arise-server "docker logs -f <container-name>"
 
 # Check networks
-ssh trent@arise-server "docker inspect <container> --format '{{json .NetworkSettings.Networks}}' | jq"
+ssh user@arise-server "docker inspect <container> --format '{{json .NetworkSettings.Networks}}' | jq"
 ```
