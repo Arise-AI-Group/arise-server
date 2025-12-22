@@ -6,7 +6,7 @@ Ubuntu server for running long-lived AI agents with private SSH access via Tails
 
 ```bash
 # SSH in (via Tailscale)
-ssh trent@agent-server
+ssh user@agent-server
 
 # Start Claude Code session
 tmux new -s work
@@ -23,8 +23,7 @@ tmux attach -t work
 
 | User | SSH Command |
 |------|-------------|
-| trent | `ssh trent@agent-server` |
-| matthew | `ssh matthew@agent-server` |
+| <username> | `ssh <username>@agent-server` |
 
 ## Services
 

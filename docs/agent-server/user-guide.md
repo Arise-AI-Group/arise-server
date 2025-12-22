@@ -6,8 +6,7 @@ How to use the agent server for AI-assisted development.
 
 ```bash
 # Via Tailscale (automatic after setup)
-ssh trent@agent-server
-ssh matthew@agent-server
+ssh user@agent-server
 ```
 
 ## Claude Code
@@ -20,7 +19,7 @@ Each user needs to authenticate once with their Anthropic subscription:
 
 ```bash
 # SSH into the server
-ssh trent@agent-server
+ssh user@agent-server
 
 # Run claude - first time triggers OAuth
 claude

@@ -6,7 +6,7 @@ How to recreate this server from scratch.
 
 - Ubuntu Server 24.04 LTS installed
 - SSH enabled
-- User account created (trent)
+- User account created
 - Tailscale connected
 
 ## Phase 1: System Essentials
@@ -152,7 +152,7 @@ Each user needs to authenticate with their Anthropic subscription:
 
 ```bash
 # SSH in as the user
-ssh trent@agent-server
+ssh user@agent-server
 
 # Run claude
 claude

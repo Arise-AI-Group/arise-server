@@ -6,8 +6,8 @@ Documentation for the Arise team infrastructure: two servers connected via Tails
 
 | Server | Purpose | SSH Access | Public URL |
 |--------|---------|------------|------------|
-| **arise-server** | Container hosting (DokPloy, n8n, demos) | `ssh trent@arise-server` | `*.arisegroup-tools.com` |
-| **agent-server** | AI agents (Claude Code, Ollama) | `ssh trent@agent-server` | None (private) |
+| **arise-server** | Container hosting (DokPloy, n8n, demos) | `ssh user@arise-server` | `*.arisegroup-tools.com` |
+| **agent-server** | AI agents (Claude Code, Ollama) | `ssh user@agent-server` | None (private) |
 
 ## Architecture
 

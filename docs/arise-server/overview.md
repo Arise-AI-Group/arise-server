@@ -6,7 +6,7 @@ Container hosting server for team demos, n8n instances, and production services.
 
 | Method | Command/URL |
 |--------|-------------|
-| SSH | `ssh trent@arise-server` |
+| SSH | `ssh user@arise-server` |
 | DokPloy UI | https://dokploy.arisegroup-tools.com |
 
 ## Server Specs

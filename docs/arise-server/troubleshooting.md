@@ -74,7 +74,7 @@ networks:
 
 **Fix**:
 ```bash
-ssh trent@arise-server "docker network connect dokploy-network dokploy-traefik"
+ssh user@arise-server "docker network connect dokploy-network dokploy-traefik"
 ```
 
 Note: May need to re-run if Traefik is recreated.
@@ -88,7 +88,7 @@ Note: May need to re-run if Traefik is recreated.
 
 **Fix**: Check existing ports:
 ```bash
-ssh trent@arise-server "docker ps --format '{{.Names}}: {{.Ports}}'"
+ssh user@arise-server "docker ps --format '{{.Names}}: {{.Ports}}'"
 ```
 
 Use a different port or use Traefik routing (no port mapping needed).
@@ -102,27 +102,27 @@ Use a different port or use Traefik routing (no port mapping needed).
 
 ### Check container status
 ```bash
-ssh trent@arise-server "docker ps -a | grep myservice"
+ssh user@arise-server "docker ps -a | grep myservice"
 ```
 
 ### View container logs
 ```bash
-ssh trent@arise-server "docker logs -f <container-name>"
+ssh user@arise-server "docker logs -f <container-name>"
 ```
 
 ### Check container networks
 ```bash
-ssh trent@arise-server "docker inspect <container-name> --format '{{json .NetworkSettings.Networks}}' | jq"
+ssh user@arise-server "docker inspect <container-name> --format '{{json .NetworkSettings.Networks}}' | jq"
 ```
 
 ### Check Traefik routes
 ```bash
-ssh trent@arise-server "docker logs dokploy-traefik 2>&1 | grep myservice"
+ssh user@arise-server "docker logs dokploy-traefik 2>&1 | grep myservice"
 ```
 
 ### Test from server
 ```bash
-ssh trent@arise-server "curl -I http://localhost:5678/"
+ssh user@arise-server "curl -I http://localhost:5678/"
 ```
 
 ## Related Docs

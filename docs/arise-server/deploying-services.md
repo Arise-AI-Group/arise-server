@@ -106,7 +106,7 @@ For external repos or services needing specific port access.
 
 Check existing port usage:
 ```bash
-ssh trent@arise-server "docker ps --format '{{.Ports}}'"
+ssh user@arise-server "docker ps --format '{{.Ports}}'"
 ```
 
 Pick next available (e.g., 5683).
