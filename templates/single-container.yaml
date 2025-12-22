@@ -1,0 +1,37 @@
+# Single-Container Compose Template
+# Use for: sandboxes, simple demos, single-service apps
+# Routing: Traefik (add domain in DokPloy)
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    environment:
+      - DB_TYPE=sqlite
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PROTOCOL=https
+      - N8N_PORT=5678
+      - WEBHOOK_URL=https://${N8N_HOST}/
+      - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=America/New_York
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=72
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  n8n_data:
+
+# Environment variables to set in DokPloy:
+# N8N_HOST=myservice.arisegroup-tools.com
+# ENCRYPTION_KEY=<generate with: openssl rand -base64 32>
+#
+# After deploying:
+# 1. Add domain in DokPloy (HTTPS: OFF, port: 5678, serviceName: n8n)
+# 2. Redeploy

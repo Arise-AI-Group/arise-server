@@ -1,0 +1,111 @@
+# Multi-Container Compose Template
+# Use for: production services with database/cache
+# Routing: Traefik (add domain in DokPloy)
+# Network: Dual-network pattern for isolation
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    networks:
+      - dokploy-network  # Traefik can reach this
+      - internal         # Can reach postgres/redis
+    environment:
+      - NODE_ENV=production
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - N8N_SECURE_COOKIE=true
+      - WEBHOOK_URL=https://${N8N_HOST}/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  n8n-worker:
+    image: n8nio/n8n:latest
+    restart: always
+    command: worker
+    networks:
+      - internal  # Only needs internal access
+    environment:
+      - NODE_ENV=production
+      - EXECUTIONS_MODE=queue
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+    depends_on:
+      - n8n
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - internal  # Isolated from other projects
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    networks:
+      - internal  # Isolated from other projects
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=n8n
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d n8n"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  dokploy-network:
+    external: true  # Shared with Traefik
+  internal:
+    # Private to this compose - other projects can't access
+
+volumes:
+  n8n_data:
+  postgres_data:
+  redis_data:
+
+# Environment variables to set in DokPloy:
+# N8N_HOST=myservice.arisegroup-tools.com
+# POSTGRES_USER=n8n
+# POSTGRES_PASSWORD=<generate secure password>
+# ENCRYPTION_KEY=<generate with: openssl rand -base64 32>
+# GENERIC_TIMEZONE=America/New_York
+#
+# After deploying:
+# 1. Add domain in DokPloy (HTTPS: OFF, port: 5678, serviceName: n8n)
+# 2. Redeploy
