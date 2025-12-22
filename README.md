@@ -49,6 +49,7 @@ Documentation for the Arise team infrastructure: two servers connected via Tails
 Full system diagram and component descriptions.
 
 ### arise-server (Container Hosting)
+- **[CHEATSHEET](docs/arise-server/CHEATSHEET.md)** - Single-page deployment reference (start here)
 - [Overview](docs/arise-server/overview.md) - Server specs and services
 - [DokPloy](docs/arise-server/dokploy.md) - Container orchestration UI
 - [Networking](docs/arise-server/networking.md) - Docker networks, Traefik, Cloudflare
