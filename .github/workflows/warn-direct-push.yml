@@ -30,27 +30,3 @@ jobs:
             const commitUrl = `${context.payload.repository.html_url}/commit/${context.sha}`;
             const commitMsg = context.payload.head_commit.message.split('\n')[0];
 
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Direct push to main detected: ${commitSha}`,
-              body: `## Branch Protection Notice
-
-**@${pusher}** pushed directly to \`main\` instead of using a pull request.
-
-**Commit:** [${commitSha}](${commitUrl})
-**Message:** ${commitMsg}
-
----
-
-### Repository Rules
-- Only repository owners should push directly to \`main\`
-- All collaborators should:
-  1. Create a feature branch (\`feat/\`, \`fix/\`, etc.)
-  2. Push changes to the feature branch
-  3. Open a pull request for review
-  4. Merge via the pull request
-
-If you are a repository owner, you can close this issue. Otherwise, please follow the branching workflow for future changes.`,
-              labels: ['branch-protection-warning']
-            });
