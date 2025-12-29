@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+.tmp/
+*.tmp
+*.log
+
+# Python (if tools are used locally)
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# Node (if any JS tooling)
+node_modules/
+
+# Secrets (never commit)
+*.pem
+*.key
+credentials.json
+token.json

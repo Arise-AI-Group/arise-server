@@ -9,6 +9,30 @@ Documentation for the Arise team infrastructure: two servers connected via Tails
 | **arise-server** | Container hosting (DokPloy, n8n, demos) | `ssh user@arise-server` | `*.arisegroup-tools.com` |
 | **agent-server** | AI agents (Claude Code, Ollama) | `ssh user@agent-server` | None (private) |
 
+## Project Structure
+
+```
+arise-infrastructure/
+├── CLAUDE.md                    # AI agent instructions
+├── README.md                    # This file
+├── infrastructure-registry.yaml # Server & service registry
+├── notes/                       # Working documentation
+├── docs/                        # Formal documentation
+│   ├── architecture.md
+│   ├── arise-server/
+│   └── agent-server/
+└── templates/                   # Docker compose templates
+```
+
+## Getting Started
+
+**For AI agents:** Read `CLAUDE.md` first.
+
+**For humans:**
+1. Check `infrastructure-registry.yaml` for current server/service state
+2. Use the Quick Access table above for SSH/URLs
+3. See Documentation section below for detailed guides
+
 ## Architecture
 
 ```

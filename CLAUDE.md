@@ -1,0 +1,133 @@
+# Project: arise-infrastructure
+
+> Client: Arise Group (Internal)
+> Status: Active
+
+## Overview
+
+Infrastructure documentation and configuration for the Arise team's two-server architecture:
+- **arise-server**: Container hosting (DokPloy, n8n, demos) with public access via Cloudflare
+- **agent-server**: AI agents (Claude Code, Ollama) with private Tailscale-only access
+
+This repository serves as the source of truth for:
+- Server configurations and networking
+- Service deployment procedures
+- Docker compose templates
+- Infrastructure registry (IPs, URLs, ports, services)
+
+## Goals
+
+- Maintain accurate, up-to-date infrastructure documentation
+- Provide repeatable deployment templates
+- Track all services and their connectivity
+- Enable team members to deploy sandboxes and demos independently
+
+---
+
+## Tools
+
+This project uses shared tools from `../agentic/`.
+
+### Available Tools
+
+| Tool | Command | Use for |
+|------|---------|---------|
+| Cloudflare API | `../agentic/run ../agentic/modules/infrastructure/tool/cloudflare_api.py` | DNS records, tunnel routes |
+| DokPloy API | `../agentic/run ../agentic/modules/infrastructure/tool/dokploy_api.py` | Compose deployment |
+
+### MCP Servers
+
+| Server | Purpose |
+|--------|---------|
+| dokploy | Container management via MCP |
+
+### Tool Preferences
+
+- Preferred diagram format: ASCII (for terminal compatibility)
+- All infrastructure changes should be documented in this repo
+
+---
+
+## Templates
+
+### Docker Compose Templates
+
+| Template | Use Case | Location |
+|----------|----------|----------|
+| Single-container | Sandboxes, simple demos | `./templates/single-container.yaml` |
+| Multi-container | Production with DB/cache | `./templates/multi-container.yaml` |
+
+### Documentation Templates
+
+- Server overview: Follow pattern in `./docs/arise-server/overview.md`
+- Config reference: Follow pattern in `./docs/agent-server/config.md`
+
+---
+
+## Formatting & Style
+
+### Writing Style
+
+- Tone: Technical, concise
+- Audience: Engineers and technically-capable team members
+- Length preference: Concise with tables for reference data
+
+### Documentation Style
+
+- Use tables for quick reference (ports, URLs, commands)
+- Include architecture diagrams as ASCII art
+- Always document the "why" alongside the "what"
+
+### Naming Conventions
+
+- Files: `kebab-case.md`
+- Folders: `lowercase/`
+- Branches: `feat/description` or `fix/description`
+- Services: `{initials}-{service}` for sandboxes (e.g., `tc-n8n`)
+
+---
+
+## Context
+
+### Key Decisions
+
+1. **Keep docs/ folder** - Using `docs/` instead of `deliverables/` for this project
+2. **Traefik for new services** - Use hostname-based routing via dokploy-network
+3. **Direct tunnel routes for legacy** - Existing services with specific port mappings
+4. **SQLite for sandboxes** - PostgreSQL only for production
+
+### Constraints
+
+- Always set HTTPS: OFF in DokPloy domains (Cloudflare handles TLS)
+- Redeploy required after adding/modifying domains
+- DokPloy admin role bug: must use API to enable permissions
+
+### Quick Reference
+
+| Resource | Location |
+|----------|----------|
+| Servers & services | `./infrastructure-registry.yaml` |
+| Deployment cheatsheet | `./docs/arise-server/CHEATSHEET.md` |
+| Networking deep-dive | `./docs/arise-server/networking.md` |
+| Agent server usage | `./docs/agent-server/user-guide.md` |
+
+### Important Links
+
+- [DokPloy UI](https://dokploy.arisegroup-tools.com)
+- [Production n8n](https://n8n.arisegroup-tools.com)
+- GitHub: arise-infrastructure repo
+
+---
+
+## Session Checklist
+
+Before starting work:
+1. Check `./infrastructure-registry.yaml` for current state
+2. Review `./notes/` for recent context
+3. Read relevant docs in `./docs/` for the server you're working with
+
+After completing work:
+1. Update `./infrastructure-registry.yaml` if services changed
+2. Add notes to `./notes/` for significant changes
+3. Update relevant docs if procedures changed
+4. Commit with descriptive message following branch conventions

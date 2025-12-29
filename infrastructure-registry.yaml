@@ -1,0 +1,221 @@
+# Infrastructure Registry
+# Updated: 2025-12-29
+# Single source of truth for Arise infrastructure
+
+# ============================================================================
+# SERVERS
+# ============================================================================
+
+servers:
+  arise-server:
+    description: Container hosting (DokPloy, n8n, demos)
+    provider: Hetzner
+    os: Ubuntu 24.04 LTS
+    specs:
+      cpu: TBD
+      ram: TBD
+    network:
+      public_ip: TBD  # Update with actual IP
+      tailscale_ip: TBD  # Update with Tailscale IP
+      tailscale_hostname: arise-server
+    ssh:
+      command: ssh user@arise-server
+      notes: Via Tailscale
+    public_access: true
+    public_domain: "*.arisegroup-tools.com"
+
+  agent-server:
+    description: AI agents (Claude Code, Ollama)
+    provider: TBD
+    os: Ubuntu 24.04 LTS
+    specs:
+      cpu: 48 cores
+      ram: 128GB
+    network:
+      public_ip: null  # Private only
+      tailscale_ip: TBD  # Update with Tailscale IP
+      tailscale_hostname: agent-server
+    ssh:
+      command: ssh user@agent-server
+      notes: Via Tailscale only
+    public_access: false
+    public_domain: null
+
+# ============================================================================
+# NETWORKING
+# ============================================================================
+
+networking:
+  tailscale:
+    network_name: arise-tailnet
+    purpose: Private inter-server communication and SSH access
+
+  cloudflare:
+    account_id: TBD  # Update with actual ID
+    zone: arisegroup-tools.com
+    tunnel:
+      id: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6"
+      name: arise-tunnel
+    dns:
+      wildcard: "*.arisegroup-tools.com"
+      type: CNAME
+      target: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6.cfargotunnel.com"
+
+  docker_networks:
+    dokploy-network:
+      type: external
+      purpose: Traefik routing to public-facing containers
+    internal:
+      type: per-compose
+      purpose: Isolated database/cache access
+
+# ============================================================================
+# SERVICES
+# ============================================================================
+
+services:
+  # --- arise-server: Infrastructure ---
+  dokploy:
+    server: arise-server
+    description: Container orchestration UI
+    port: 3000
+    url: https://dokploy.arisegroup-tools.com
+    routing: direct-tunnel
+    status: active
+
+  traefik:
+    server: arise-server
+    description: Reverse proxy (managed by DokPloy)
+    port: 80
+    url: null  # Internal only
+    routing: null
+    status: active
+
+  cloudflared:
+    server: arise-server
+    description: Cloudflare tunnel client
+    port: null
+    url: null
+    routing: null
+    status: active
+
+  # --- arise-server: Production ---
+  n8n-production:
+    server: arise-server
+    description: Main workflow automation
+    port: 5678
+    url: https://n8n.arisegroup-tools.com
+    routing: direct-tunnel  # Legacy, bypasses Traefik
+    stack:
+      - PostgreSQL
+      - Redis
+      - Worker
+    status: active
+
+  # --- arise-server: Sandboxes ---
+  tc-n8n:
+    server: arise-server
+    description: Trent's sandbox
+    port: 5679
+    url: https://tc-n8n.arisegroup-tools.com
+    routing: direct-tunnel
+    stack:
+      - SQLite
+    status: active
+
+  ca-n8n:
+    server: arise-server
+    description: CA's sandbox
+    port: TBD
+    url: https://ca-n8n.arisegroup-tools.com
+    routing: direct-tunnel
+    stack:
+      - SQLite
+    status: active
+
+  ma-n8n:
+    server: arise-server
+    description: MA's sandbox
+    port: TBD
+    url: https://ma-n8n.arisegroup-tools.com
+    routing: direct-tunnel
+    stack:
+      - SQLite
+    status: active
+
+  mk-n8n:
+    server: arise-server
+    description: MK's sandbox
+    port: TBD
+    url: https://mk-n8n.arisegroup-tools.com
+    routing: direct-tunnel
+    stack:
+      - SQLite
+    status: active
+
+  # --- agent-server ---
+  ollama:
+    server: agent-server
+    description: Local LLM inference
+    port: 11434
+    url: http://localhost:11434
+    routing: null  # Private only
+    model: qwen2.5:14b
+    status: active
+
+  claude-code:
+    server: agent-server
+    description: AI coding assistant
+    port: null
+    url: null
+    routing: null
+    auth: OAuth (Anthropic subscription)
+    status: active
+
+# ============================================================================
+# PORT ASSIGNMENTS
+# ============================================================================
+
+port_assignments:
+  arise-server:
+    3000: dokploy
+    80: traefik
+    5678: n8n-production
+    5679: tc-n8n
+    # 5680: next available
+    # Add new ports sequentially
+
+  agent-server:
+    11434: ollama
+
+# ============================================================================
+# USERS
+# ============================================================================
+
+users:
+  agent-server:
+    trent:
+      home: /home/trent
+      workspace: /opt/agents/trent
+      docker_access: true
+    matthew:
+      home: /home/matthew
+      workspace: /opt/agents/matthew
+      docker_access: true
+
+# ============================================================================
+# TUNNEL INGRESS ORDER
+# ============================================================================
+# IMPORTANT: Order matters! Specific routes before wildcard.
+
+tunnel_ingress:
+  - hostname: dokploy.arisegroup-tools.com
+    service: http://localhost:3000
+  - hostname: n8n.arisegroup-tools.com
+    service: http://localhost:5678
+  - hostname: tc-n8n.arisegroup-tools.com
+    service: http://localhost:5679
+  # Add new specific routes here...
+  - hostname: "*.arisegroup-tools.com"
+    service: http://localhost:80  # Traefik wildcard
+  - service: http_status:404  # Catch-all
