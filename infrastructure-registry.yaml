@@ -1,6 +1,7 @@
-# Infrastructure Registry
-# Updated: 2025-12-29
-# Single source of truth for Arise infrastructure
+# arise-server Registry
+# Updated: 2025-01-12
+# Service registry for the arise-server container hosting platform
+# Note: agent-server has its own repository
 
 # ============================================================================
 # SERVERS
@@ -25,21 +26,9 @@ servers:
     public_domain: "*.arisegroup-tools.com"
 
   agent-server:
-    description: AI agents (Claude Code, Ollama)
-    provider: TBD
-    os: Ubuntu 24.04 LTS
-    specs:
-      cpu: 48 cores
-      ram: 128GB
-    network:
-      public_ip: null  # Private only
-      tailscale_ip: TBD  # Update with Tailscale IP
-      tailscale_hostname: agent-server
-    ssh:
-      command: ssh user@agent-server
-      notes: Via Tailscale only
+    description: AI agents (Claude Code, Ollama) - see separate repo
+    tailscale_hostname: agent-server
     public_access: false
-    public_domain: null
 
 # ============================================================================
 # NETWORKING
@@ -153,24 +142,7 @@ services:
       - SQLite
     status: active
 
-  # --- agent-server ---
-  ollama:
-    server: agent-server
-    description: Local LLM inference
-    port: 11434
-    url: http://localhost:11434
-    routing: null  # Private only
-    model: qwen2.5:14b
-    status: active
-
-  claude-code:
-    server: agent-server
-    description: AI coding assistant
-    port: null
-    url: null
-    routing: null
-    auth: OAuth (Anthropic subscription)
-    status: active
+  # --- agent-server services are tracked in the agent-server repo ---
 
 # ============================================================================
 # PORT ASSIGNMENTS
@@ -184,24 +156,6 @@ port_assignments:
     5679: tc-n8n
     # 5680: next available
     # Add new ports sequentially
-
-  agent-server:
-    11434: ollama
-
-# ============================================================================
-# USERS
-# ============================================================================
-
-users:
-  agent-server:
-    trent:
-      home: /home/trent
-      workspace: /opt/agents/trent
-      docker_access: true
-    matthew:
-      home: /home/matthew
-      workspace: /opt/agents/matthew
-      docker_access: true
 
 # ============================================================================
 # TUNNEL INGRESS ORDER

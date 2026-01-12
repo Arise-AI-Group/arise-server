@@ -1,23 +1,25 @@
-# Project: arise-infrastructure
+# Project: arise-server
 
 > Client: Arise Group (Internal)
 > Status: Active
 
 ## Overview
 
-Infrastructure documentation and configuration for the Arise team's two-server architecture:
-- **arise-server**: Container hosting (DokPloy, n8n, demos) with public access via Cloudflare
-- **agent-server**: AI agents (Claude Code, Ollama) with private Tailscale-only access
+Container hosting server for the Arise team running on Hetzner with public access via Cloudflare:
+- **DokPloy** for container orchestration
+- **Traefik** for reverse proxy routing
+- **n8n** for workflow automation (production + sandboxes)
+- **Demo deployments** for client projects
 
 This repository serves as the source of truth for:
-- Server configurations and networking
+- Server configuration and networking
 - Service deployment procedures
 - Docker compose templates
-- Infrastructure registry (IPs, URLs, ports, services)
+- Service registry (URLs, ports, routing)
 
 ## Goals
 
-- Maintain accurate, up-to-date infrastructure documentation
+- Maintain accurate, up-to-date server documentation
 - Provide repeatable deployment templates
 - Track all services and their connectivity
 - Enable team members to deploy sandboxes and demos independently
@@ -60,7 +62,6 @@ This project uses shared tools from `../agentic/`.
 ### Documentation Templates
 
 - Server overview: Follow pattern in `./docs/arise-server/overview.md`
-- Config reference: Follow pattern in `./docs/agent-server/config.md`
 
 ---
 
@@ -91,10 +92,9 @@ This project uses shared tools from `../agentic/`.
 
 ### Key Decisions
 
-1. **Keep docs/ folder** - Using `docs/` instead of `deliverables/` for this project
-2. **Traefik for new services** - Use hostname-based routing via dokploy-network
-3. **Direct tunnel routes for legacy** - Existing services with specific port mappings
-4. **SQLite for sandboxes** - PostgreSQL only for production
+1. **Traefik for new services** - Use hostname-based routing via dokploy-network
+2. **Direct tunnel routes for legacy** - Existing services with specific port mappings
+3. **SQLite for sandboxes** - PostgreSQL only for production
 
 ### Constraints
 
@@ -106,16 +106,15 @@ This project uses shared tools from `../agentic/`.
 
 | Resource | Location |
 |----------|----------|
-| Servers & services | `./infrastructure-registry.yaml` |
+| Service registry | `./infrastructure-registry.yaml` |
 | Deployment cheatsheet | `./docs/arise-server/CHEATSHEET.md` |
 | Networking deep-dive | `./docs/arise-server/networking.md` |
-| Agent server usage | `./docs/agent-server/user-guide.md` |
 
 ### Important Links
 
 - [DokPloy UI](https://dokploy.arisegroup-tools.com)
 - [Production n8n](https://n8n.arisegroup-tools.com)
-- GitHub: arise-infrastructure repo
+- GitHub: arise-server repo
 
 ---
 
@@ -124,7 +123,7 @@ This project uses shared tools from `../agentic/`.
 Before starting work:
 1. Check `./infrastructure-registry.yaml` for current state
 2. Review `./notes/` for recent context
-3. Read relevant docs in `./docs/` for the server you're working with
+3. Read relevant docs in `./docs/arise-server/`
 
 After completing work:
 1. Update `./infrastructure-registry.yaml` if services changed

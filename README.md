@@ -1,91 +1,77 @@
-# Arise Infrastructure
+# arise-server
 
-Documentation for the Arise team infrastructure: two servers connected via Tailscale, with public access through Cloudflare.
+Container hosting server for the Arise team: DokPloy, n8n, demos, and client sandboxes with public access via Cloudflare.
 
 ## Quick Access
 
-| Server | Purpose | SSH Access | Public URL |
-|--------|---------|------------|------------|
-| **arise-server** | Container hosting (DokPloy, n8n, demos) | `ssh user@arise-server` | `*.arisegroup-tools.com` |
-| **agent-server** | AI agents (Claude Code, Ollama) | `ssh user@agent-server` | None (private) |
+| Resource | URL/Command |
+|----------|-------------|
+| SSH | `ssh user@arise-server` (via Tailscale) |
+| DokPloy UI | https://dokploy.arisegroup-tools.com |
+| Production n8n | https://n8n.arisegroup-tools.com |
+| Wildcard domain | `*.arisegroup-tools.com` |
 
 ## Project Structure
 
 ```
-arise-infrastructure/
+arise-server/
 ├── CLAUDE.md                    # AI agent instructions
 ├── README.md                    # This file
-├── infrastructure-registry.yaml # Server & service registry
+├── infrastructure-registry.yaml # Service registry & port assignments
 ├── notes/                       # Working documentation
 ├── docs/                        # Formal documentation
 │   ├── architecture.md
-│   ├── arise-server/
-│   └── agent-server/
+│   └── arise-server/
+├── compose/                     # Active compose files
 └── templates/                   # Docker compose templates
 ```
-
-## Getting Started
-
-**For AI agents:** Read `CLAUDE.md` first.
-
-**For humans:**
-1. Check `infrastructure-registry.yaml` for current server/service state
-2. Use the Quick Access table above for SSH/URLs
-3. See Documentation section below for detailed guides
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      TAILSCALE NETWORK                       │
-│                    (Internal / Maintenance)                  │
-│                                                             │
-│   ┌─────────────────┐           ┌─────────────────┐        │
-│   │  agent-server   │           │  arise-server   │        │
-│   │  (AI Agents)    │           │  (Containers)   │        │
-│   │                 │           │                 │        │
-│   │  • Claude Code  │           │  • DokPloy      │        │
-│   │  • Ollama       │           │  • Traefik      │        │
-│   │  • tmux         │           │  • n8n, demos   │        │
-│   └─────────────────┘           └────────┬────────┘        │
-│          ↑                               │                  │
-│          │ SSH                           │                  │
-└──────────┼───────────────────────────────┼──────────────────┘
-           │                               │
-      (private)                   ┌────────▼────────┐
-                                  │ Cloudflare      │
-                                  │ Tunnel          │
+                                  ┌─────────────────┐
+                                  │  arise-server   │
+                                  │  (Hetzner)      │
+                                  │                 │
+                                  │  • DokPloy      │
+                                  │  • Traefik      │
+                                  │  • n8n          │
+                                  │  • Sandboxes    │
                                   └────────┬────────┘
                                            │
-                                  ┌────────▼────────┐
-                                  │   INTERNET      │
-                                  │  (*.arisegroup  │
-                                  │   -tools.com)   │
-                                  └─────────────────┘
+                              ┌────────────┼────────────┐
+                              │            │            │
+                     ┌────────▼────────┐   │   ┌───────▼───────┐
+                     │   Tailscale     │   │   │  Cloudflare   │
+                     │   (SSH access)  │   │   │  Tunnel       │
+                     └─────────────────┘   │   └───────┬───────┘
+                                           │           │
+                                           │   ┌───────▼───────┐
+                                           │   │   INTERNET    │
+                                           │   │ *.arisegroup  │
+                                           │   │  -tools.com   │
+                                           │   └───────────────┘
 ```
-
-- **Tailscale**: Private network for SSH access and maintenance
-- **Cloudflare Tunnel**: Public internet access to arise-server services only
 
 ## Documentation
 
-### [Architecture Overview](docs/architecture.md)
-Full system diagram and component descriptions.
-
-### arise-server (Container Hosting)
+### Quick Start
 - **[CHEATSHEET](docs/arise-server/CHEATSHEET.md)** - Single-page deployment reference (start here)
+
+### Detailed Guides
 - [Overview](docs/arise-server/overview.md) - Server specs and services
 - [DokPloy](docs/arise-server/dokploy.md) - Container orchestration UI
 - [Networking](docs/arise-server/networking.md) - Docker networks, Traefik, Cloudflare
 - [Deploying Services](docs/arise-server/deploying-services.md) - Step-by-step guide
 - [Troubleshooting](docs/arise-server/troubleshooting.md) - Common issues and fixes
 
-### agent-server (AI Agents)
-- [Overview](docs/agent-server/overview.md) - Server specs and services
-- [Setup](docs/agent-server/setup.md) - How to recreate from scratch
-- [User Guide](docs/agent-server/user-guide.md) - Daily usage (Claude Code, tmux)
-- [Config Reference](docs/agent-server/config.md) - Ports, paths, commands
+### Reference
+- [Architecture](docs/architecture.md) - Full system diagram
 
 ### Templates
 - [Single-container compose](templates/single-container.yaml) - For sandboxes
 - [Multi-container compose](templates/multi-container.yaml) - For production services
+
+## Related
+
+- **agent-server** - AI agents server (separate repo)
