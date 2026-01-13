@@ -28,29 +28,18 @@ arise-server/
 
 ## Architecture
 
-```
-                                  ┌─────────────────┐
-                                  │  arise-server   │
-                                  │  (Hetzner)      │
-                                  │                 │
-                                  │  • DokPloy      │
-                                  │  • Traefik      │
-                                  │  • n8n          │
-                                  │  • Sandboxes    │
-                                  └────────┬────────┘
-                                           │
-                              ┌────────────┼────────────┐
-                              │            │            │
-                     ┌────────▼────────┐   │   ┌───────▼───────┐
-                     │   Tailscale     │   │   │  Cloudflare   │
-                     │   (SSH access)  │   │   │  Tunnel       │
-                     └─────────────────┘   │   └───────┬───────┘
-                                           │           │
-                                           │   ┌───────▼───────┐
-                                           │   │   INTERNET    │
-                                           │   │ *.arisegroup  │
-                                           │   │  -tools.com   │
-                                           │   └───────────────┘
+```mermaid
+flowchart TB
+    subgraph server["arise-server (Hetzner)"]
+        dokploy["DokPloy"]
+        traefik["Traefik"]
+        n8n["n8n"]
+        sandboxes["Sandboxes"]
+    end
+
+    server --> tailscale["Tailscale<br/>(SSH access)"]
+    server --> tunnel["Cloudflare Tunnel"]
+    tunnel --> internet["INTERNET<br/>*.arisegroup-tools.com"]
 ```
 
 ## Documentation
