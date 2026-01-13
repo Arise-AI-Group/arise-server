@@ -4,10 +4,11 @@ One-page reference for deploying services on arise-server.
 
 ## Quick Decision
 
-```
-Can you modify the docker-compose.yml?
-├── YES → Use Traefik routing (this guide)
-└── NO  → Use direct Cloudflare route (ask for help)
+```mermaid
+flowchart LR
+    Q{Can you modify<br/>docker-compose.yml?}
+    Q -->|YES| traefik["Use Traefik routing<br/>(this guide)"]
+    Q -->|NO| direct["Use direct Cloudflare route<br/>(ask for help)"]
 ```
 
 ## Compose Templates

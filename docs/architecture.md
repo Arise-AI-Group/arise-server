@@ -2,44 +2,28 @@
 
 ## Network Topology
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          TAILSCALE NETWORK                               │
-│                       (Private / Maintenance)                            │
-│                                                                         │
-│   ┌───────────────────────┐           ┌───────────────────────┐        │
-│   │     agent-server      │           │     arise-server      │        │
-│   │                       │           │                       │        │
-│   │  ┌─────────────────┐  │           │  ┌─────────────────┐  │        │
-│   │  │  Claude Code    │  │           │  │    DokPloy      │  │        │
-│   │  │  (AI Assistant) │  │           │  │  (Orchestrator) │  │        │
-│   │  └─────────────────┘  │           │  └────────┬────────┘  │        │
-│   │                       │           │           │           │        │
-│   │  ┌─────────────────┐  │           │  ┌────────▼────────┐  │        │
-│   │  │     Ollama      │  │           │  │    Traefik      │  │        │
-│   │  │  (Local LLM)    │  │           │  │ (Reverse Proxy) │  │        │
-│   │  │  qwen2.5:14b    │  │           │  └────────┬────────┘  │        │
-│   │  └─────────────────┘  │           │           │           │        │
-│   │                       │           │  ┌────────▼────────┐  │        │
-│   │  48 cores, 128GB RAM  │           │  │   Containers    │  │        │
-│   │  Ubuntu 24.04         │           │  │  n8n, demos...  │  │        │
-│   └───────────────────────┘           │  └─────────────────┘  │        │
-│              ↑                        └───────────┬───────────┘        │
-│              │                                    │                     │
-└──────────────┼────────────────────────────────────┼─────────────────────┘
-               │                                    │
-          (SSH only)                       ┌────────▼────────┐
-           private                         │   Cloudflare    │
-                                           │     Tunnel      │
-                                           │  (TLS termination)
-                                           └────────┬────────┘
-                                                    │
-                                           ┌────────▼────────┐
-                                           │    INTERNET     │
-                                           │                 │
-                                           │ *.arisegroup-   │
-                                           │   tools.com     │
-                                           └─────────────────┘
+```mermaid
+flowchart TB
+    subgraph tailscale["TAILSCALE NETWORK (Private/Maintenance)"]
+        subgraph agent["agent-server"]
+            claude["Claude Code<br/>(AI Assistant)"]
+            ollama["Ollama<br/>qwen2.5:14b"]
+            agent_spec["48 cores, 128GB RAM<br/>Ubuntu 24.04"]
+        end
+
+        subgraph arise["arise-server"]
+            dokploy["DokPloy<br/>(Orchestrator)"]
+            traefik["Traefik<br/>(Reverse Proxy)"]
+            containers["Containers<br/>n8n, demos..."]
+            dokploy --> traefik --> containers
+        end
+    end
+
+    local["Local Machine"] -.->|SSH via Tailscale| agent
+    local -.->|SSH via Tailscale| arise
+
+    arise --> tunnel["Cloudflare Tunnel<br/>(TLS termination)"]
+    tunnel --> internet["INTERNET<br/>*.arisegroup-tools.com"]
 ```
 
 ## Components
@@ -79,31 +63,34 @@
 ## Traffic Flow
 
 ### Public Web Request
-```
-User Browser
-    │
-    ▼ HTTPS
-Cloudflare Edge (TLS termination)
-    │
-    ▼ Tunnel (encrypted)
-arise-server
-    │
-    ▼ HTTP
-Traefik (route by hostname)
-    │
-    ▼ HTTP
-Container (n8n, demo, etc.)
+
+```mermaid
+sequenceDiagram
+    participant User as User Browser
+    participant CF as Cloudflare Edge
+    participant Server as arise-server
+    participant Traefik
+    participant Container as Container (n8n, demo)
+
+    User->>CF: HTTPS request
+    Note over CF: TLS termination
+    CF->>Server: Tunnel (encrypted)
+    Server->>Traefik: HTTP
+    Traefik->>Container: HTTP (route by hostname)
+    Container-->>User: Response
 ```
 
 ### SSH Access (Maintenance)
-```
-Local Machine
-    │
-    ▼ Tailscale VPN
-agent-server or arise-server
-    │
-    ▼ SSH
-Shell session
+
+```mermaid
+sequenceDiagram
+    participant Local as Local Machine
+    participant TS as Tailscale VPN
+    participant Server as agent/arise-server
+
+    Local->>TS: Connect
+    TS->>Server: SSH
+    Server-->>Local: Shell session
 ```
 
 ## Current Services

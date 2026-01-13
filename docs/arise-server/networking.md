@@ -4,20 +4,19 @@ How traffic flows from the internet to containers on arise-server.
 
 ## Traffic Flow
 
-```
-User Browser
-    │
-    ▼ HTTPS (TLS termination here)
-Cloudflare Edge
-    │
-    ▼ Tunnel (encrypted)
-arise-server
-    │
-    ▼ HTTP (internal only)
-Traefik (routes by hostname)
-    │
-    ▼ HTTP
-Container
+```mermaid
+sequenceDiagram
+    participant User as User Browser
+    participant CF as Cloudflare Edge
+    participant Server as arise-server
+    participant Traefik
+    participant Container
+
+    User->>CF: HTTPS
+    Note over CF: TLS termination
+    CF->>Server: Tunnel (encrypted)
+    Server->>Traefik: HTTP (internal)
+    Traefik->>Container: HTTP (route by hostname)
 ```
 
 ## Cloudflare Configuration
@@ -77,28 +76,33 @@ networks:
 
 ### How It Works
 
-```
-┌─────────────────────────────────────────────────┐
-│                 dokploy-network                  │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐         │
-│  │ Traefik │  │ proj-A  │  │ proj-B  │         │
-│  │         │  │  app    │  │  app    │         │
-│  └─────────┘  └────┬────┘  └────┬────┘         │
-└────────────────────┼────────────┼──────────────┘
-                     │            │
-         ┌───────────┴───┐  ┌─────┴───────────┐
-         │ proj-A        │  │ proj-B          │
-         │ internal      │  │ internal        │
-         │  ┌──────────┐ │  │  ┌──────────┐  │
-         │  │ postgres │ │  │  │ postgres │  │
-         │  └──────────┘ │  │  └──────────┘  │
-         └───────────────┘  └────────────────┘
-              ISOLATED            ISOLATED
+```mermaid
+flowchart TB
+    subgraph dokploy["dokploy-network (shared)"]
+        traefik["Traefik"]
+        appA["proj-A app"]
+        appB["proj-B app"]
+    end
+
+    subgraph internalA["proj-A internal (isolated)"]
+        pgA["postgres"]
+    end
+
+    subgraph internalB["proj-B internal (isolated)"]
+        pgB["postgres"]
+    end
+
+    traefik --> appA
+    traefik --> appB
+    appA --> pgA
+    appB --> pgB
+
+    pgA x--x pgB
 ```
 
 - Traefik routes to apps via `dokploy-network`
 - Apps talk to their databases via `internal`
-- proj-A cannot reach proj-B's postgres
+- proj-A cannot reach proj-B's postgres (isolated networks)
 
 ## Traefik Configuration
 

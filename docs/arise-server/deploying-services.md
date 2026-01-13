@@ -4,13 +4,14 @@ Step-by-step guide for deploying new services on arise-server.
 
 ## Decision Tree
 
-```
-Can you modify the docker-compose.yml?
-├── YES → Use Traefik routing (simpler)
-│         Add domain in DokPloy, no port mapping needed
-│
-└── NO (external repo) → Use direct Cloudflare route
-                         Requires unique host port + tunnel route
+```mermaid
+flowchart TD
+    Q{Can you modify the<br/>docker-compose.yml?}
+    Q -->|YES| traefik["Use Traefik routing (simpler)<br/>Add domain in DokPloy<br/>No port mapping needed"]
+    Q -->|NO| direct["Use direct Cloudflare route<br/>Requires unique host port<br/>+ tunnel route"]
+
+    traefik --> method1["See Method 1 below"]
+    direct --> method2["See Method 2 below"]
 ```
 
 ## Method 1: Traefik Routing (Recommended)

@@ -45,7 +45,7 @@ This project uses shared tools from `../agentic/`.
 
 ### Tool Preferences
 
-- Preferred diagram format: ASCII (for terminal compatibility)
+- Preferred diagram format: Mermaid (renders in GitHub/IDEs, easy to maintain)
 - All infrastructure changes should be documented in this repo
 
 ---
@@ -76,7 +76,7 @@ This project uses shared tools from `../agentic/`.
 ### Documentation Style
 
 - Use tables for quick reference (ports, URLs, commands)
-- Include architecture diagrams as ASCII art
+- Include architecture diagrams as Mermaid (fenced with ```mermaid)
 - Always document the "why" alongside the "what"
 
 ### Naming Conventions
