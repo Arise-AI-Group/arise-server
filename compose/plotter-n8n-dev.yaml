@@ -1,0 +1,48 @@
+# Plotter Mechanix Development Sandbox
+# Based on: templates/single-container.yaml
+# Routing: Traefik (add domain in DokPloy after deploy)
+
+services:
+  n8n:
+    image: n8nio/n8n:2.6.0
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    environment:
+      - DB_TYPE=sqlite
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PROTOCOL=https
+      - N8N_PORT=5678
+      - WEBHOOK_URL=https://${N8N_HOST}/
+      - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=America/Phoenix
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  n8n_data:
+
+# ============================================================================
+# DEPLOYMENT INSTRUCTIONS
+# ============================================================================
+#
+# Environment variables to set in DokPloy:
+#   N8N_HOST=plotter-n8n-dev.arisegroup-tools.com
+#   ENCRYPTION_KEY=<generate with: openssl rand -base64 32>
+#
+# After deploying:
+#   1. Add domain in DokPloy:
+#      - Domain: plotter-n8n-dev.arisegroup-tools.com
+#      - HTTPS: OFF (Cloudflare handles TLS)
+#      - Port: 5678
+#      - Service Name: n8n
+#   2. Redeploy to activate Traefik labels
+#   3. Access https://plotter-n8n-dev.arisegroup-tools.com
+#   4. Create admin account
+#   5. Generate API key: Settings → API
