@@ -1,0 +1,15 @@
+model_list:
+  # Chat/completion model - AContext requests gpt-4.1, we route to Gemini
+  - model_name: gpt-4.1
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+
+  # Embedding model - AContext requests text-embedding-3-small, we route to Gemini
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: gemini/text-embedding-004
+      api_key: os.environ/GEMINI_API_KEY
+
+general_settings:
+  master_key: sk-litellm-acontext
