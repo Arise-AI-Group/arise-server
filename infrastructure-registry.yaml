@@ -1,5 +1,5 @@
 # arise-server Registry
-# Updated: 2025-01-12
+# Updated: 2026-02-14
 # Service registry for the arise-server container hosting platform
 # Note: agent-server has its own repository
 
@@ -41,14 +41,27 @@ networking:
 
   cloudflare:
     account_id: TBD  # Update with actual ID
-    zone: arisegroup-tools.com
-    tunnel:
-      id: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6"
-      name: arise-tunnel
-    dns:
-      wildcard: "*.arisegroup-tools.com"
-      type: CNAME
-      target: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6.cfargotunnel.com"
+    zones:
+      arisegroup-tools.com:
+        tunnel:
+          id: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6"
+          name: arise-tunnel
+        dns:
+          wildcard: "*.arisegroup-tools.com"
+          type: CNAME
+          target: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6.cfargotunnel.com"
+      40hero.com:
+        tunnel:
+          id: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6"
+          name: arise-tunnel  # Same tunnel, different zone
+        dns:
+          records:
+            - name: "acontext-api.40hero.com"
+              type: CNAME
+              target: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6.cfargotunnel.com"
+            - name: "acontext.40hero.com"
+              type: CNAME
+              target: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6.cfargotunnel.com"
 
   docker_networks:
     dokploy-network:
@@ -154,6 +167,34 @@ services:
     dokploy_id: 73K581yG6LR8gPxA5ZN9e
     status: active
 
+  # --- arise-server: AContext (Context Data Platform) ---
+  acontext-api:
+    server: arise-server
+    description: AContext REST API (Go)
+    port: 8029  # Internal, Traefik-routed
+    url: https://acontext-api.40hero.com
+    routing: traefik
+    stack:
+      - PostgreSQL (pgvector)
+      - Redis
+      - RabbitMQ
+      - MinIO (S3)
+      - LiteLLM (Gemini proxy)
+      - acontext-core (Python)
+    dokploy_id: DBezrZjirLrWVDnb50t0z
+    auth: "Bearer sk-ac-<ROOT_API_BEARER_TOKEN>"
+    api_docs: https://acontext-api.40hero.com/swagger/index.html
+    status: active
+
+  acontext-ui:
+    server: arise-server
+    description: AContext Dashboard (Next.js)
+    port: 3000  # Internal, Traefik-routed
+    url: https://acontext.40hero.com
+    routing: traefik
+    dokploy_id: DBezrZjirLrWVDnb50t0z  # Same compose
+    status: active
+
   # --- agent-server services are tracked in the agent-server repo ---
 
 # ============================================================================
@@ -182,6 +223,10 @@ tunnel_ingress:
   - hostname: tc-n8n.arisegroup-tools.com
     service: http://localhost:5679
   # Add new specific routes here...
+  - hostname: acontext-api.40hero.com
+    service: http://localhost:80  # Traefik routes to container
+  - hostname: acontext.40hero.com
+    service: http://localhost:80  # Traefik routes to container
   - hostname: "*.arisegroup-tools.com"
     service: http://localhost:80  # Traefik wildcard
   - service: http_status:404  # Catch-all

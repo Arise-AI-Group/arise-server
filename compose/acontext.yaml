@@ -1,0 +1,283 @@
+# AContext - Context Data Platform for AI Agents
+# Routing: Traefik (add domains in DokPloy)
+# Network: Dual-network pattern for isolation
+#
+# Services:
+#   acontext-api  (Go)   - REST API, port 8029
+#   acontext-core (Python) - Core processing, port 8000
+#   acontext-ui   (React)  - Dashboard, port 3000
+#   litellm       - LLM proxy (Gemini), port 4000
+#   postgres      - Database
+#   redis         - Cache
+#   rabbitmq      - Message queue
+#   minio         - S3-compatible storage
+
+services:
+  # === Public-facing services (Traefik routes here) ===
+
+  acontext-api:
+    image: ghcr.io/memodb-io/acontext-api:latest
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+      - internal
+    environment:
+      - APP_ENV=release
+      - ROOT_API_BEARER_TOKEN=${ROOT_API_BEARER_TOKEN}
+      - DATABASE_HOST=postgres
+      - DATABASE_EXPORT_PORT=5432
+      - DATABASE_USER=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_NAME=${POSTGRES_DB:-acontext}
+      - REDIS_HOST=redis
+      - REDIS_EXPORT_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_EXPORT_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-acontext}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_VHOST_ENCODED=%2F
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_ENDPOINT=http://minio:9000
+      - S3_INTERNAL_ENDPOINT=http://minio:9000
+      - S3_REGION=us-east-1
+      - S3_BUCKET=${S3_BUCKET:-acontext-assets}
+      - API_EXPORT_PORT=8029
+      - CORE_BASE_URL=http://acontext-core:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8029/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  acontext-core:
+    image: ghcr.io/memodb-io/acontext-core:latest
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-acontext}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - MQ_URL=amqp://${RABBITMQ_USER:-acontext}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      - LLM_API_KEY=sk-litellm-acontext
+      - LLM_BASE_URL=http://litellm:4000
+      - LLM_SDK=openai
+      - LLM_SIMPLE_MODEL=gpt-4.1
+      - BLOCK_EMBEDDING_PROVIDER=openai
+      - BLOCK_EMBEDDING_MODEL=text-embedding-3-small
+      - BLOCK_EMBEDDING_API_KEY=sk-litellm-acontext
+      - BLOCK_EMBEDDING_BASE_URL=http://litellm:4000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_ENDPOINT=http://minio:9000
+      - S3_REGION=us-east-1
+      - S3_BUCKET=${S3_BUCKET:-acontext-assets}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  acontext-ui:
+    image: ghcr.io/memodb-io/acontext-ui:latest
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+      - internal
+    environment:
+      - NODE_ENV=production
+      - API_SERVER_URL=http://acontext-api:8029
+      - ROOT_API_BEARER_TOKEN=${ROOT_API_BEARER_TOKEN}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-acontext}
+      - NEXT_PUBLIC_BASE_URL=https://acontext.40hero.com
+    depends_on:
+      acontext-api:
+        condition: service_healthy
+
+  # === LiteLLM Proxy (routes to Gemini) ===
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /tmp/litellm-config.yaml <<'EOF'
+        model_list:
+        - model_name: gpt-4.1
+          litellm_params:
+            model: gemini/gemini-2.5-flash
+            api_key: os.environ/GEMINI_API_KEY
+        - model_name: text-embedding-3-small
+          litellm_params:
+            model: gemini/text-embedding-004
+            api_key: os.environ/GEMINI_API_KEY
+        general_settings:
+          master_key: sk-litellm-acontext
+        EOF
+        exec litellm --config /tmp/litellm-config.yaml --port 4000
+    # No healthcheck - wget not available in this Python image.
+    # acontext-core uses service_started instead of service_healthy.
+
+  # === Internal services (isolated) ===
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-acontext}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB:-acontext}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - internal
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    networks:
+      - internal
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-acontext}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    networks:
+      - internal
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - minio_data:/data
+
+  # PostgreSQL vector extension initialization (required by AContext)
+  postgres-init:
+    image: pgvector/pgvector:pg17
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        PGPASSWORD=$${POSTGRES_PASSWORD} psql -h postgres -U $${POSTGRES_USER} -d $${POSTGRES_DB:-acontext} -c 'CREATE EXTENSION IF NOT EXISTS vector;' && echo 'pgvector extension created'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-acontext}
+    restart: "no"
+
+  # MinIO bucket initialization
+  minio-init:
+    image: minio/mc:latest
+    networks:
+      - internal
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb local/${S3_BUCKET:-acontext-assets} --ignore-existing;
+      echo 'Bucket created successfully';
+      "
+    restart: "no"
+
+networks:
+  dokploy-network:
+    external: true
+  internal:
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:
+
+# Environment variables to set in DokPloy:
+# POSTGRES_USER=acontext
+# POSTGRES_PASSWORD=<generate: openssl rand -base64 32>
+# POSTGRES_DB=acontext
+# REDIS_PASSWORD=<generate: openssl rand -base64 32>
+# RABBITMQ_USER=acontext
+# RABBITMQ_PASSWORD=<generate: openssl rand -base64 32>
+# MINIO_ROOT_USER=acontext
+# MINIO_ROOT_PASSWORD=<generate: openssl rand -base64 32>
+# ROOT_API_BEARER_TOKEN=<generate: openssl rand -base64 32>
+# GEMINI_API_KEY=<your gemini api key>
+# S3_BUCKET=acontext-assets
+#
+# After deploying:
+# 1. Add domain: acontext-api.40hero.com (HTTPS: OFF, port: 8029, serviceName: acontext-api)
+# 2. Add domain: acontext.40hero.com (HTTPS: OFF, port: 3000, serviceName: acontext-ui)
+# 3. Redeploy to generate Traefik labels
