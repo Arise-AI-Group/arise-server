@@ -1,5 +1,5 @@
 # arise-server Registry
-# Updated: 2026-02-14
+# Updated: 2026-02-17
 # Service registry for the arise-server container hosting platform
 # Note: agent-server has its own repository
 
@@ -193,6 +193,19 @@ services:
     url: https://acontext.40hero.com
     routing: traefik
     dokploy_id: DBezrZjirLrWVDnb50t0z  # Same compose
+    status: active
+
+  # --- arise-server: Windmill (Workflow Engine) ---
+  windmill:
+    server: arise-server
+    description: Workflow engine / internal tool builder
+    port: null  # Traefik routing, no host port needed
+    url: https://windmill.arisegroup-tools.com
+    routing: traefik
+    stack:
+      - PostgreSQL
+      - Workers (default + native)
+    dokploy_id: km2hC-IELWxzhXoKVEJW_
     status: active
 
   # --- agent-server services are tracked in the agent-server repo ---

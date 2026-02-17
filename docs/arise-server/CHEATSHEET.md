@@ -103,6 +103,7 @@ When adding domain in DokPloy:
 | 502 | Can't reach database (`getaddrinfo EAI_AGAIN`) | Use dual-network pattern above |
 | 301 loop | HTTPS enabled in DokPloy | Set HTTPS to OFF |
 | 504 | Traefik not on dokploy-network | SSH and run: `docker network connect dokploy-network dokploy-traefik` |
+| 404 (after deploy "done") | Password with `/` or `+` in DATABASE_URL | Use `openssl rand -hex 24` instead of `-base64` for URL-embedded passwords |
 
 ## Debugging
 
