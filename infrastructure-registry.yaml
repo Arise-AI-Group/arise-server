@@ -1,5 +1,5 @@
 # arise-server Registry
-# Updated: 2026-02-17
+# Updated: 2026-02-23
 # Service registry for the arise-server container hosting platform
 # Note: agent-server has its own repository
 
@@ -62,6 +62,12 @@ networking:
             - name: "acontext.40hero.com"
               type: CNAME
               target: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6.cfargotunnel.com"
+            - name: "wm.40hero.com"
+              type: CNAME
+              target: "86c6d6ed-a7e0-48df-a50a-fc0766ff5ab6.cfargotunnel.com"
+            - name: "ops.40hero.com"
+              type: CNAME
+              target: "a5849419-711a-4925-b193-c5ec7bd59f76.cfargotunnel.com"  # agent-server-tunnel
 
   docker_networks:
     dokploy-network:
@@ -198,7 +204,7 @@ services:
   # --- arise-server: Windmill (Workflow Engine) ---
   windmill:
     server: arise-server
-    description: Workflow engine / internal tool builder
+    description: Workflow engine / internal tool builder (Arise)
     port: null  # Traefik routing, no host port needed
     url: https://windmill.arisegroup-tools.com
     routing: traefik
@@ -208,7 +214,36 @@ services:
     dokploy_id: km2hC-IELWxzhXoKVEJW_
     status: active
 
-  # --- agent-server services are tracked in the agent-server repo ---
+  windmill-40hero:
+    server: arise-server
+    description: Workflow engine / internal tool builder (4.0 Hero)
+    port: null  # Traefik routing, no host port needed
+    url: https://wm.40hero.com
+    routing: traefik
+    stack:
+      - PostgreSQL
+      - Workers (default + native)
+    dokploy_id: rftcK1q7c4J8iB5vIJzon
+    status: active
+
+  # --- agent-server: ops-mcp (routed via Cloudflare tunnel → Tailscale) ---
+  ops-mcp:
+    server: agent-server
+    description: Operations MCP server (Claude Mobile bridge)
+    port: 8000
+    url: https://ops.40hero.com
+    routing: direct-tunnel  # agent-server-tunnel (separate from arise-server tunnel)
+    tunnel:
+      id: "a5849419-711a-4925-b193-c5ec7bd59f76"
+      name: agent-server-tunnel
+    stack:
+      - FastMCP (Python)
+      - SQLite (ops.db)
+      - Claude Code (subprocess, async queue)
+    auth: OAuth 2.1 (GitHub proxy)
+    status: active
+
+  # --- agent-server: other services tracked in the agent-server repo ---
 
 # ============================================================================
 # PORT ASSIGNMENTS
@@ -240,6 +275,9 @@ tunnel_ingress:
     service: http://localhost:80  # Traefik routes to container
   - hostname: acontext.40hero.com
     service: http://localhost:80  # Traefik routes to container
+  - hostname: wm.40hero.com
+    service: http://localhost:80  # Traefik routes to container
+  # ops.40hero.com is served by agent-server-tunnel (separate tunnel, not routed through arise-server)
   - hostname: "*.arisegroup-tools.com"
     service: http://localhost:80  # Traefik wildcard
   - service: http_status:404  # Catch-all

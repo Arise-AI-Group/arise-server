@@ -1,11 +1,11 @@
 # Project: arise-server
 
-> Client: Arise Group (Internal)
+> Owner: Trent (shared infrastructure for 4.0 Hero and Arise network)
 > Status: Active
 
 ## Overview
 
-Container hosting server for the Arise team running on Hetzner with public access via Cloudflare:
+Container hosting server managed by Trent, running on Hetzner with public access via Cloudflare:
 - **DokPloy** for container orchestration
 - **Traefik** for reverse proxy routing
 - **n8n** for workflow automation (production + sandboxes)
@@ -22,20 +22,20 @@ This repository serves as the source of truth for:
 - Maintain accurate, up-to-date server documentation
 - Provide repeatable deployment templates
 - Track all services and their connectivity
-- Enable team members to deploy sandboxes and demos independently
+- Enable contractors to deploy sandboxes and demos when engaged
 
 ---
 
 ## Tools
 
-This project uses shared tools from `../agentic/`.
+This project uses shared tools available via Claude Code plugins and MCP servers.
 
 ### Available Tools
 
-| Tool | Command | Use for |
-|------|---------|---------|
-| Cloudflare API | `../agentic/run ../agentic/modules/infrastructure/tool/cloudflare_api.py` | DNS records, tunnel routes |
-| DokPloy API | `../agentic/run ../agentic/modules/infrastructure/tool/dokploy_api.py` | Compose deployment |
+| Tool | Access | Use for |
+|------|--------|---------|
+| Cloudflare API | Via `infrastructure` plugin (`/infrastructure:skills`) | DNS records, tunnel routes |
+| DokPloy API | Via `infrastructure` plugin or MCP server | Compose deployment |
 
 ### MCP Servers
 
